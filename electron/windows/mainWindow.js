@@ -3,6 +3,11 @@ const path = require('path');
 const { getEntryUrl, getPreloadPath, isDev } = require('../utils/env');
 const logger = require('../utils/logger');
 
+// Lazy-require to avoid circular dependency at module load time
+function getTrayModule() {
+  return require('../tray/trayManager');
+}
+
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
 
@@ -51,6 +56,20 @@ function createMainWindow() {
     if (!url.startsWith(entryUrl)) {
       event.preventDefault();
       logger.warn(`Blocked navigation to: ${url}`);
+    }
+  });
+
+  // Intercept close: hide to tray unless the app is actually quitting
+  mainWindow.on('close', (event) => {
+    const { getIsQuitting } = getTrayModule();
+    if (!getIsQuitting()) {
+      event.preventDefault();
+      mainWindow.hide();
+      // Remove from taskbar while hidden on Windows
+      if (process.platform === 'win32') {
+        mainWindow.setSkipTaskbar(true);
+      }
+      logger.debug('Window hidden to tray');
     }
   });
 

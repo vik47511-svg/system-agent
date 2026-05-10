@@ -3,7 +3,7 @@
 const { app, Menu } = require('electron');
 const { createMainWindow, getMainWindow, destroyMainWindow } = require('../windows/mainWindow');
 const { registerHandlers, unregisterHandlers } = require('../ipc/handlers');
-const { createTray, destroyTray } = require('../tray/trayManager');
+const { createTray, destroyTray, setQuitting, onNavigate } = require('../tray/trayManager');
 const logger = require('../utils/logger');
 const { isDev } = require('../utils/env');
 
@@ -30,11 +30,8 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    const win = getMainWindow();
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
-    }
+    const { restoreWindow } = require('../tray/trayManager');
+    restoreWindow(getMainWindow());
   });
 }
 
@@ -50,7 +47,23 @@ app.whenReady().then(() => {
 
   const mainWindow = createMainWindow();
   registerHandlers(mainWindow);
-  createTray();
+  createTray(mainWindow);
+
+  // Forward tray navigation requests to the renderer
+  onNavigate((page) => {
+    const win = getMainWindow();
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('navigate:page', page);
+    }
+  });
+
+  // Keep the process alive when all windows are closed (tray keeps it running)
+  app.on('window-all-closed', (event) => {
+    if (process.platform !== 'darwin') {
+      // Do not quit — tray is still active
+      event.preventDefault?.();
+    }
+  });
 
   app.on('activate', () => {
     // macOS: re-create window when dock icon is clicked and no windows are open
@@ -63,15 +76,9 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => {
-  // On macOS keep the process alive (standard macOS convention)
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
 app.on('before-quit', () => {
   logger.info('App quitting — cleaning up');
+  setQuitting(true);
   unregisterHandlers();
   destroyTray();
   destroyMainWindow();
