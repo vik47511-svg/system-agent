@@ -4,6 +4,14 @@ const { app, Menu } = require('electron');
 const { createMainWindow, getMainWindow, destroyMainWindow } = require('../windows/mainWindow');
 const { registerHandlers, unregisterHandlers } = require('../ipc/handlers');
 const { createTray, destroyTray, onNavigate } = require('../tray/trayManager');
+const {
+  createOverlayWindow,
+  showOverlay,
+  destroyOverlay,
+  startDemoMode,
+  stopDemoMode,
+  unregisterOverlayIpc,
+} = require('../overlay/overlayWindow');
 const logger = require('../utils/logger');
 const { isDev } = require('../utils/env');
 
@@ -73,6 +81,10 @@ app.whenReady().then(() => {
   registerHandlers(mainWindow);
   createTray(mainWindow);
 
+  // Create and show the floating overlay window
+  createOverlayWindow();
+  startDemoMode();
+
   // Mark tray as active now that the tray icon exists
   assistantStateManager.setFlags({ trayActive: true });
 
@@ -122,7 +134,10 @@ app.on('before-quit', () => {
   trayManager.setQuitting(true);
 
   assistantStateManager.shutdown();
+  stopDemoMode();
   unregisterHandlers();
+  unregisterOverlayIpc();
+  destroyOverlay();
   destroyTray();
   destroyMainWindow();
 });

@@ -17,6 +17,15 @@ function getPreloadPath() {
   return path.join(__dirname, '..', 'preload', 'preload.js');
 }
 
+function getOverlayPreloadPath() {
+  return path.join(__dirname, '..', 'preload', 'overlayPreload.js');
+}
+
+function getOverlayUrl() {
+  if (isDev) return `${DEV_SERVER_URL}/overlay/index.html`;
+  return `file://${path.join(FRONTEND_DIST, 'overlay', 'index.html')}`;
+}
+
 function getIconPath() {
   const iconFile = process.platform === 'win32' ? 'icon.ico'
     : process.platform === 'darwin' ? 'icon.icns'
@@ -24,4 +33,4 @@ function getIconPath() {
   return path.join(APP_ROOT, 'assets', 'icons', iconFile);
 }
 
-module.exports = { isDev, isTest, DEV_SERVER_URL, APP_ROOT, FRONTEND_DIST, getEntryUrl, getPreloadPath, getIconPath };
+module.exports = { isDev, isTest, DEV_SERVER_URL, APP_ROOT, FRONTEND_DIST, getEntryUrl, getPreloadPath, getOverlayPreloadPath, getOverlayUrl, getIconPath };

@@ -12,6 +12,12 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, 'dist/frontend'),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main:    path.resolve(__dirname, 'frontend/index.html'),
+        overlay: path.resolve(__dirname, 'frontend/overlay/index.html'),
+      },
+    },
   },
   server: {
     port: 5173,

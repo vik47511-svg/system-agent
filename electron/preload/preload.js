@@ -16,6 +16,14 @@ const INVOKE_CHANNELS = new Set([
   'settings:set',
   'system:info',
   'shell:openExternal',
+  // Overlay controls
+  'overlay:show',
+  'overlay:hide',
+  'overlay:toggle',
+  'overlay:isVisible',
+  'overlay:setState',
+  'overlay:setPosition',
+  'overlay:snapCorner',
 ]);
 
 // Allowed on (main → renderer push) channels
@@ -78,6 +86,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   system: {
     info: () => ipcRenderer.invoke('system:info'),
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+  },
+
+  overlay: {
+    show:        () => ipcRenderer.invoke('overlay:show'),
+    hide:        () => ipcRenderer.invoke('overlay:hide'),
+    toggle:      () => ipcRenderer.invoke('overlay:toggle'),
+    isVisible:   () => ipcRenderer.invoke('overlay:isVisible'),
+    setState:    (state) => ipcRenderer.invoke('overlay:setState', state),
+    setPosition: (x, y) => ipcRenderer.invoke('overlay:setPosition', x, y),
+    snapCorner:  (corner) => ipcRenderer.invoke('overlay:snapCorner', corner),
   },
 });
 
